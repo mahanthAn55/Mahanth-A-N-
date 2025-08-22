@@ -1,0 +1,142 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define URL_SIZE 100
+
+// Structure for a Tab
+typedef struct Tab {
+    int pageID;
+    char url[URL_SIZE];
+    struct Tab *prev, *next;
+} Tab;
+
+int nextID = 1;  // unique ID counter
+
+// Create a new tab
+Tab* createTab(char url[]) {
+    Tab *newTab = (Tab*)malloc(sizeof(Tab));
+    newTab->pageID = nextID++;
+    strcpy(newTab->url, url);
+    newTab->prev = newTab->next = NULL;
+    return newTab;
+}
+
+// Show current tab
+void showCurrent(Tab *current) {
+    if (current == NULL) {
+        printf("No tab is open.\n");
+    } else {
+        printf("Current Tab: [%d] %s\n", current->pageID, current->url);
+    }
+}
+
+// Show history of tabs
+void showHistory(Tab *current) {
+    if (current == NULL) {
+        printf("No tabs open.\n");
+        return;
+    }
+    Tab *temp = current;
+    while (temp->prev) temp = temp->prev;  // go to first tab
+    printf("Open Tabs:\n");
+    while (temp) {
+        printf("[%d] %s", temp->pageID, temp->url);
+        if (temp == current) printf("  <-- current");
+        printf("\n");
+        temp = temp->next;
+    }
+}
+
+// Close current tab
+Tab* closeCurrent(Tab *current) {
+    if (current == NULL) {
+        printf("No tab to close.\n");
+        return NULL;
+    }
+    Tab *prev = current->prev;
+    Tab *next = current->next;
+
+    if (prev) prev->next = next;
+    if (next) next->prev = prev;
+
+    printf("Closed Tab: [%d] %s\n", current->pageID, current->url);
+    free(current);
+
+    if (next) return next;
+    else return prev;
+}
+
+int main() {
+    Tab *current = NULL;
+    int choice;
+    char url[URL_SIZE];
+
+    while (1) {
+        printf("\n--- Browser Menu ---\n");
+        printf("1. Visit new page\n");
+        printf("2. Go back\n");
+        printf("3. Go forward\n");
+        printf("4. Show current tab\n");
+        printf("5. Close current tab\n");
+        printf("6. Show history\n");
+        printf("7. Exit\n");
+        printf("Enter choice: ");
+        scanf("%d", &choice);
+        getchar(); // clear newline
+
+        switch (choice) {
+            case 1:
+                printf("Enter URL: ");
+                fgets(url, URL_SIZE, stdin);
+                url[strcspn(url, "\n")] = '\0'; // remove newline
+                if (current == NULL) {
+                    current = createTab(url);
+                } else {
+                    Tab *newTab = createTab(url);
+                    newTab->prev = current;
+                    current->next = newTab;
+                    current = newTab;
+                }
+                showCurrent(current);
+                break;
+
+            case 2: // Go back
+                if (current && current->prev) {
+                    current = current->prev;
+                } else {
+                    printf("No previous tab.\n");
+                }
+                showCurrent(current);
+                break;
+
+            case 3: // Go forward
+                if (current && current->next) {
+                    current = current->next;
+                } else {
+                    printf("No forward tab.\n");
+                }
+                showCurrent(current);
+                break;
+
+            case 4:
+                showCurrent(current);
+                break;
+
+            case 5:
+                current = closeCurrent(current);
+                break;
+
+            case 6:
+                showHistory(current);
+                break;
+
+            case 7:
+                printf("Exiting...\n");
+                return 0;
+
+            default:
+                printf("Invalid choice!\n");
+        }
+    }
+}
